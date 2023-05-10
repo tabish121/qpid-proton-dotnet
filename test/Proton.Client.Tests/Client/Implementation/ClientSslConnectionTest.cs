@@ -30,7 +30,6 @@ namespace Apache.Qpid.Proton.Client.Implementation
    [TestFixture, Timeout(20000)]
    public class ClientSslConnectionTest : ClientBaseTestFixture
    {
-      //[Ignore("Failed in CI due to server certificate not found.")]
       [Test]
       public void TestCreateConnectionString()
       {
