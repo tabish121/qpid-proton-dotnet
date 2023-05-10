@@ -23,13 +23,14 @@ using Apache.Qpid.Proton.Test.Driver;
 using Microsoft.Extensions.Logging;
 
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Apache.Qpid.Proton.Client.Implementation
 {
    [TestFixture, Timeout(20000)]
    public class ClientSslConnectionTest : ClientBaseTestFixture
    {
-      [Ignore("Failed in CI due to server certificate not found.")]
+      //[Ignore("Failed in CI due to server certificate not found.")]
       [Test]
       public void TestCreateConnectionString()
       {
