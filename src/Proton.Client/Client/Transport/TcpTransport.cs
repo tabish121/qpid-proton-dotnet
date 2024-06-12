@@ -46,7 +46,7 @@ namespace Apache.Qpid.Proton.Client.Transport
 
       private readonly AtomicBoolean closed = new();
 
-      private readonly IEventLoop eventLoop;
+      private readonly TaskFactory eventLoop;
       private readonly TransportOptions options;
       private readonly SslOptions sslOptions;
       private readonly bool traceBytes;
@@ -73,7 +73,7 @@ namespace Apache.Qpid.Proton.Client.Transport
 
       public int Port => port;
 
-      public IEventLoop EventLoop => eventLoop;
+      public TaskFactory EventLoop => eventLoop;
 
       public EndPoint EndPoint => channel?.RemoteEndPoint;
 
@@ -81,7 +81,7 @@ namespace Apache.Qpid.Proton.Client.Transport
 
       #endregion
 
-      public TcpTransport(TransportOptions options, SslOptions sslOptions, IEventLoop eventLoop)
+      public TcpTransport(TransportOptions options, SslOptions sslOptions, TaskFactory eventLoop)
       {
          this.eventLoop = eventLoop;
          this.options = options;
@@ -336,7 +336,7 @@ namespace Apache.Qpid.Proton.Client.Transport
 
          connected = true;
 
-         eventLoop.Execute(() => connectedHandler(this));
+         eventLoop.StartNew(() => connectedHandler(this));
       }
 
       private static void ConnectCallback(IAsyncResult connectResult)
@@ -350,7 +350,7 @@ namespace Apache.Qpid.Proton.Client.Transport
          }
          catch (Exception ex)
          {
-            transport.eventLoop.Execute(() => transport.connectFailedHandler(transport, ex));
+            transport.eventLoop.StartNew(() => transport.connectFailedHandler(transport, ex));
          }
       }
 
@@ -381,7 +381,7 @@ namespace Apache.Qpid.Proton.Client.Transport
                // End of stream
                if (!closed)
                {
-                  eventLoop.Execute(() => disconnectedHandler(this));
+                  eventLoop.StartNew(() => disconnectedHandler(this));
                }
 
                break;
@@ -393,7 +393,7 @@ namespace Apache.Qpid.Proton.Client.Transport
                   LOG.Trace("IO Transport read {0}", BitConverter.ToString(readBuffer, 0, bytesRead));
                }
 
-               eventLoop.Execute(() => readHandler(
+               eventLoop.StartNew(() => readHandler(
                   this, ProtonByteBufferAllocator.Instance.Wrap(readBuffer, 0, bytesRead)));
             }
          }
@@ -562,7 +562,7 @@ namespace Apache.Qpid.Proton.Client.Transport
             // write completion callbacks from this write,
             if (HasCompletion)
             {
-               transport.eventLoop.Execute(Completion);
+               transport.eventLoop.StartNew(Completion);
             }
 
             if (IsFlushRequired)

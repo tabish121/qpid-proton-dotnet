@@ -18,6 +18,7 @@
 using System;
 using System.Net;
 using System.Security.Principal;
+using System.Threading.Tasks;
 using Apache.Qpid.Proton.Buffer;
 using Apache.Qpid.Proton.Client.Concurrent;
 
@@ -35,7 +36,7 @@ namespace Apache.Qpid.Proton.Client.Transport
       /// as the client connection will use a single event loop for the
       /// duration of its lifetime.
       /// </summary>
-      IEventLoop EventLoop { get; }
+      TaskFactory EventLoop { get; }
 
       /// <summary>
       /// Returns the originally provided host address this transport was given in the

@@ -624,7 +624,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
 
       internal void Execute(Action action)
       {
-         ioContext.EventLoop.Execute(action);
+         ioContext.EventLoop.StartNew(action);
       }
 
       internal void Schedule(Action action, TimeSpan delay)
@@ -886,7 +886,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
          {
             try
             {
-               ioContext.EventLoop.Execute(() =>
+               ioContext.EventLoop.StartNew(() =>
                {
                   LOG.Trace("Close requested for connection: {0}", this);
 
@@ -1130,7 +1130,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
             if (reconnectAttempts == 0)
             {
                LOG.Trace("Initial connect attempt will be performed immediately");
-               ioContext.EventLoop.Execute(() => AttemptConnection(location));
+               ioContext.EventLoop.StartNew(() => AttemptConnection(location));
             }
             else
             {
@@ -1139,7 +1139,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
                // TODO: Executor scheduling would handle connection close, this will
                //       try and run this even after a close.
                Task.Delay((int)delay).ContinueWith(
-                  (t) => ioContext.EventLoop.Execute(() =>
+                  (t) => ioContext.EventLoop.StartNew(() =>
                   {
                      if (!IsClosed)
                      {
@@ -1152,7 +1152,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
          else if (reconnectAttempts == 0)
          {
             LOG.Trace("Initial reconnect attempt will be performed immediately");
-            ioContext.EventLoop.Execute(() => AttemptConnection(location));
+            ioContext.EventLoop.StartNew(() => AttemptConnection(location));
          }
          else
          {
@@ -1161,7 +1161,7 @@ namespace Apache.Qpid.Proton.Client.Implementation
             // TODO: Executor scheduling would handle connection close, this will
             //       try and run this even after a close.
             Task.Delay((int)delay).ContinueWith(
-               (t) => ioContext.EventLoop.Execute(() =>
+               (t) => ioContext.EventLoop.StartNew(() =>
                {
                   if (!IsClosed)
                   {

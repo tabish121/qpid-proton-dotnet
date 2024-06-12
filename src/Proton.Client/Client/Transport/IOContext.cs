@@ -16,13 +16,14 @@
  */
 
 using System;
+using System.Threading.Tasks;
 using Apache.Qpid.Proton.Client.Concurrent;
 using Apache.Qpid.Proton.Utilities;
 
 namespace Apache.Qpid.Proton.Client.Transport
 {
    /// <summary>
-   /// Represents an IO context used by clients to commicate with remote
+   /// Represents an IO context used by clients to communicate with remote
    /// services and provides a single threaded event loop used to manage
    /// IO based work and connection related services.
    /// </summary>
@@ -31,16 +32,21 @@ namespace Apache.Qpid.Proton.Client.Transport
       // TODO Add shutdown quiesse timeouts
       // private static readonly int SHUTDOWN_TIMEOUT = 50;
 
-      private readonly IEventLoop eventLoop;
       private readonly TransportOptions transportOptions;
       private readonly SslOptions sslOptions;
+
+      private readonly ConcurrentExclusiveSchedulerPair schedulerPair;
+      private readonly TaskFactory taskFactory;
+
+      private bool shutdown;
 
       public IOContext(TransportOptions transportOptions, SslOptions sslOptions)
       {
          Statics.RequireNonNull(transportOptions, "Transport Options cannot be null");
          Statics.RequireNonNull(sslOptions, "Transport SSL Options cannot be null");
 
-         this.eventLoop = new DefaultEventLoop();
+         this.schedulerPair = new(TaskScheduler.Default, 1, 1);
+         this.taskFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);
          this.transportOptions = transportOptions;
          this.sslOptions = sslOptions;
       }
@@ -49,23 +55,27 @@ namespace Apache.Qpid.Proton.Client.Transport
       /// Provides access to the event loop used to process all IO related
       /// work done within a client instance.
       /// </summary>
-      public IEventLoop EventLoop => eventLoop;
+      public TaskFactory EventLoop => taskFactory;
 
       public void Shutdown()
       {
-         eventLoop.Shutdown();  // TODO graceful shutdown with quiesce
+         if (!shutdown)
+         {
+            schedulerPair.Complete();  // TODO graceful shutdown with quiesce
+            shutdown = true;
+         }
       }
 
       public ITransport NewTransport()
       {
-         if (eventLoop.IsShutdown || eventLoop.IsTerminated)
+         if (shutdown)
          {
             throw new InvalidOperationException("Cannot create new transport when context is shutdown.");
          }
 
          // TODO - WebSockets
 
-         return new TcpTransport(transportOptions, sslOptions, eventLoop);
+         return new TcpTransport(transportOptions, sslOptions, taskFactory);
       }
    }
 }
